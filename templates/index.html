@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GPU Monitor</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<body>
+<h1>GPU Monitor</h1>
+
+<div id="status-container">
+  <p>Status: <span id="status-text">{{ "Running" if status.running else "Stopped" }}</span></p>
+  <p>Last Updated: <span id="last-update">{{ last_time or "N/A" }}</span></p>
+</div>
+
+<div id="alerts-container">
+{% if alerts %}
+  <div class="alert">
+    <p><strong>Alerts:</strong></p>
+    <ul id="alerts-list">
+    {% for a in alerts %}
+      <li>{{ a }}</li>
+    {% endfor %}
+    </ul>
+  </div>
+{% else %}
+  <div id="alerts-list"></div>
+{% endif %}
+</div>
+
+<!-- <form method="post" action="{{ url_for('control') }}">
+  <input type="hidden" name="log" value="{{ log }}">
+  <input type="hidden" name="interval" value="{{ interval }}">
+  <button name="action" value="start">Start Monitoring</button>
+  <button name="action" value="stop">Stop Monitoring</button>
+  <button name="action" value="download">Download CSV</button>
+  <label>
+    <input type="checkbox" name="include_pytorch" {% if include_pytorch %}checked{% endif %}>
+    Include PyTorch stats
+  </label>
+</form> -->
+
+<form id="control-form" method="post" action="{{ url_for('control') }}">
+  <input type="hidden" name="log" value="{{ log }}">
+  <input type="hidden" name="interval" value="{{ interval }}">
+  <button id="start-btn" name="action" value="start">Start</button>
+  <button id="stop-btn" name="action" value="stop">Stop</button>
+  <button id="download-btn" name="action" value="download">Download Log</button>
+  <label>
+    <input type="checkbox" name="include_pytorch" {% if include_pytorch %}checked{% endif %}>
+    Include PyTorch stats
+  </label>
+</form>
+
+<!-- Modal for alert popup -->
+<div id="alert-modal" class="modal hidden">
+  <div class="modal-content">
+    <span id="close-modal" class="close">&times;</span>
+    <h3>Status Alert</h3>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+
+<h2>Latest Snapshot</h2>
+<table id="gpu-table">
+  <thead>
+    <tr>
+      <th>GPU</th><th>Name</th><th>Mem Used</th><th>Total Mem</th><th>GPU %</th><th>Mem %</th><th>Temp °C</th>
+      <th>PyTorch Alloc</th><th>PyTorch Reserved</th><th>Frag</th><th>CPU %</th><th>RAM Used</th><th>RAM Total</th><th>Alerts</th>
+    </tr>
+  </thead>
+  <tbody id="gpu-table-body">
+  {% if last_sample %}
+    {% for r in last_sample %}
+      <tr>
+        <td>{{ r.gpu_index }}</td>
+        <td>{{ r.gpu_name }}</td>
+        <td>{{ r.nvml_memory_used_MB }}</td>
+        <td>{{ r.nvml_memory_total_MB }}</td>
+        <td>{{ r.nvml_gpu_util }}%</td>
+        <td>{{ r.nvml_mem_util }}%</td>
+        <td>{{ r.nvml_temperature_C }}</td>
+        <td>{{ r.pytorch_allocated_MB or "" }}</td>
+        <td>{{ r.pytorch_reserved_MB or "" }}</td>
+        <td>{{ r.pytorch_fragmentation or "" }}</td>
+        <td>{{ r.cpu_percent }}</td>
+        <td>{{ r.ram_used_GB }}</td>
+        <td>{{ r.ram_total_GB }}</td>
+        <td>{{ r.alerts }}</td>
+    </tr>
+    {% endfor %}
+  {% else %}
+    <tr><td colspan="14">No data yet.</td></tr>
+  {% endif %}
+  </tbody>
+</table>
+</body>
+</html>
